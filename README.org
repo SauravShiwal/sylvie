@@ -1,0 +1,110 @@
+* Sylvie
+  Sylvie is a tool that allows for data entanglement , it applies transformation to a stream of data . It is a simpler and easier form of standard GNU coreutils tools like sed , awk etc.
+
+  IT IS A PROJECT DEVELOPED FOR HACK THE TERMINAL HACKATHON.Thanks to them for giving such oppurtunity.
+
+** Systems
+   Sylvie has been devloped and tested on Arch Linux , other GNU/Linux systems are supported with Python 3.9 installed .
+   
+** Installation
+   Sylvie is just a script (right now!) and there is no other choice than moving script to a location within your $PATH variable.
+   Make the script executable by using ~chmod~.
+
+** Dependencies
+   It only depends on ~pygments~ for colorizing input .
+
+   #+begin_shell sh
+   pip install --user pygments
+   #+end_shell
+
+** Usage
+   Sylvie is a command line tool , thus must be controlled with command line arguments.
+   Different arguments control how the data is transformed inside Sylvie.
+
+   /It does not replace tools like awk , uniq , sed etc . For complex data transformation those tools are the right tools./
+
+   Order matters in Sylvie , arguments can be repeated for further transformation , some examples are given , also a youtube video is here.
+
+   Sylvie by default takes input from STDIN , which can be given using ~|~ operator in POSIX shells(Bash , Zsh).For instead taking input from file use ~--file~ argument.
+
+*** Arguments
+    | Argument  | Description                                                                |
+    | --file    | Uses the given file as input rather than STDIN                             |
+    | --upper   | Transform current stream into uppercase                                    |
+    | --lower   | Transform current stream into lowercase                                    |
+    | --choice  | Narrow data by selecting given range of lines(Takes input as range)        |
+    | --divert  | Diverts data stream to given filename , along with continuing data stream. |
+    | --count   | Counts data stream by the given method (Word or line)                      |
+    | --sort    | Sorts data stream by given method(Alphabetical , etc)                      |
+    | --store   | Store current data stream into a variable                                  |
+    | --search  | Narrows data stream to lines containing given search term                  |
+    | --concat  | Concatenates given variable data to current data stream                    |
+    | --var     | Replaces current data stream with the one in given variable                |
+    | --linum   | Adds line numbers to data straem with given method                         |
+    | --output  | Outputs current data stream to given filename , ending current data stream |
+    | --unique  | Only forwards unique lines/word in data stream                             |
+    | --color   | Try to colorize output using pygments                                      |
+    | --tabular | Enter tabular mode                                                         |
+
+    Variables can be stored using ~--store~ argument and retreived using ~--var~ argument.
+    By default ~input~ variable contains original input to Sylvie.
+
+    Range in ~--choice~ is either
+    - Single integer for that specific line
+    - ~start:end~ format , both must be given if range is used. ~:end~ , and ~start:~ are invalid
+    - ~start:end:skip~ format , all three numbers must be given.
+
+*** Tabular mode
+    This mode interprets data stream as table containing rows and column , special arguments work in this mode.
+
+    For more complex tabular operations on data stream , it is recommended to use ~awk~.
+
+    /Using tabular mode arguments without tabular mode does nothing to data stream./
+
+    Some argument exit tabular mode , which means you have to use ~--tabular~ again for more tabular operations.
+
+**** Tabular Mode Arguments
+    | Arguments  | Usage                                                                    |
+    | --column   | Selects a given column no(Starts with 0)                                 |
+    | --strip    | Strip data of given letters (Pos for left strip and neg for right strip) |
+    | --max      | Gives maximum of given column and exits tabular mode                     |
+    | --min      | Gives minimum of given column and exits tabular mode                     |
+    | --mean     | Givesn mean of given column and exits tabular mode                       |
+    | --median   | Givesn median of given column and exits tabular mode                     |
+    | --std      | Gives standard deviation of given columna and exits tabular mode         |
+    | --add      | Sums given column and exits tabular mode                                 |
+    | --multiply | Multiply given column with a number or value of variable                 |
+    | --divide   | Divide given column with a number or value of variable                   |
+    | --variance | Gives variance of given column and exits tabular mode                    |
+
+    Any arguments can be repeated except ~--file~ which takes in input only once., in any order,
+    Sylvie outputs to STDOUT , thus can again be piped to some other tool or itself.
+
+** Examples
+   These examples are just an slice of what sylvie can do , for more thourough explanation refer to this youtube vide.
+
+   Using it to calculate average temperature of my cores.This uses ~lm-sensors~ package , which gives temperature info in Linux systems.
+
+   ~lm-sensors~ provides ~sensors~ command for finding temperature.
+   #+begin_src sh 
+   sensors | sylvie.py --search Core --tabular --column 2 --strip 1 --strip -3 --mean
+   #+end_src
+
+   This uses the ~/proc/meminfo~ file in Linux for calculating percentage of free  memory(RAM).
+
+   #+begin_src sh
+   sylvie.py --file /proc/meminfo --search MemTotal --tabular --column 1 --store total --var input --search MemFree --tabular --column 1 --divide total
+   #+end_src
+
+  Sylvie can colorize source code and add line numbers.
+  This example adds color , line number and displays first ten lines of ~Sylvie's~ own source code
+
+  #+begin_src sh
+  sylvie.py --file sylvie.py --color --color --linum arabic --choice 0:10
+  #+end_src
+
+   
+
+
+
+   

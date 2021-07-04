@@ -1,14 +1,46 @@
 #!/bin/python
-import argparse
-import math
-import statistics
-import sys
-import codecs
 
+# IMPORTS
+
+# Argpase for argument parsing 
+import argparse
+# Math for mathematical functions
+import math
+# Statistics for mean , median , std etc
+import statistics
+# Getting values of arguments in order
+import sys
+# Reading from STDIN and escaping special chars
+import codecs
+import fileinput
+
+# Pygments for coloring data
+from pygments import highlight
+from pygments.lexers import guess_lexer
+from pygments.formatters import TerminalFormatter
+
+# Internal Variables
 SEPERATOR = ' '
 NEWLINE = '\n'
 INTERNAL_DATA = dict()
+
+
+
+# Converts arabic numerals to roman 
+def int_to_roman(integer):
+    """Converts Arabic Numerals to Roman Numerals"""
+    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
+    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    result = []
+    for i in range(len(ints)):
+        count = int(integer / ints[i])
+        result.append(nums[i] * count)
+        integer -= ints[i] * count
+    return ''.join(result)
+
+# Method to add all required arguments to the Argument Parser
 def parse_arguments():
+    """Add arguments with correct formatting for user help"""
     parser = argparse.ArgumentParser(description='Process data',
                                      prog='sylvie'
                                      )
@@ -17,11 +49,6 @@ def parse_arguments():
                         required=False,
                         help='Which file to read from instead of stdin',
                         )
-    parser.add_argument('--seperator',
-                       action='store',
-                       required=False,
-                        help = 'Provide custom Seperator symbol',
-                       )
     parser.add_argument('--color',
                         action='store_true',
                         required=False,
@@ -30,13 +57,7 @@ def parse_arguments():
     parser.add_argument('--choice',
                         action='store',
                         required=False,
-                        type=int,
                         help = 'Whether to provide interative choice between all options',
-                        )
-    parser.add_argument('--newline',
-                        action='store',
-                        required=False,
-                        help='Provide custom newline symbol',
                         )
     parser.add_argument('--divert',
                         action='store',
@@ -68,7 +89,7 @@ def parse_arguments():
                         )
     parser.add_argument('--linum',
                          action='store',
-                         choices=['roman','arabic','word'],
+                         choices=['roman','arabic'],
                          required=False,
                          help='Whether to add line numbers to output'
                          )
@@ -97,44 +118,129 @@ def parse_arguments():
                         required=False,
                         help='Whether to transform data to uppercase'
                         )
+    parser.add_argument('--column',
+                        action='store',
+                        required=False,
+                        help='Which column to select (only while passing --tabular)'
+                        )
+    parser.add_argument('--search',
+                        action='store',
+                        required=False,
+                        help='Which line to search for'
+                        )
+    parser.add_argument('--strip',
+                        action='store',
+                        required=False,
+                        help='Strip some characters from each line'
+                        )
+    parser.add_argument('--add',
+                        action='store_true',
+                        required=False,
+                        help='Add column in tabular mode'
+                        )
+    parser.add_argument('--mean',
+                        action='store_true',
+                        required=False,
+                        help='Mean column in tabular mode'
+                        )
+    parser.add_argument('--max',
+                        action='store_true',
+                        required=False,
+                        help='Find max in column , tabular mode'
+                        )
+    parser.add_argument('--min',
+                        action='store_true',
+                        required=False,
+                        help='Find min in column , tabular mode'
+                        )
+    parser.add_argument('--variance',
+                        action='store_true',
+                        required=False,
+                        help='Find variance in column , tabular mode'
+                        )
+    parser.add_argument('--std',
+                        action='store_true',
+                        required=False,
+                        help='Find standard deviance in column , tabular mode'
+                        )
+    parser.add_argument('--median',
+                        action='store_true',
+                        required=False,
+                        help='Find median in column , tabular mode'
+                        )
+    parser.add_argument('--multiply',
+                        action='store',
+                        required=False,
+                        help='Multiply each value in column by given value'
+                        )
+    parser.add_argument('--divide',
+                        action='store',
+                        required=False,
+                        help='Divide each value in column by given value'
+                        )
+    parser.add_argument('--concat',
+                        action='store',
+                        required=False,
+                        help='Concat given variable to current stream'
+                        )
                         
+    # Returns the Namespace Object after parsing all current arguments
     return parser.parse_args()
-
-def setup_defaults(arguments):
-    pass
     
+# Method to get input either from STDIN for from a file
+# STDIN can be passed using pipes in POSIX systems.
 def get_input(filename):
+    """Get input from file or STDIN"""
     data = None
     if filename:
         with open(filename) as inputfile:
             data = inputfile.read()
     else:
-        data = codecs.decode(input(),'unicode_escape')
+        # Escape special characters such as \n , \r etc.
+        data = codecs.decode(sys.stdin.read(),'unicode_escape')
            
             
     return data
             
+# Helper function to parse string into slice operators
+def string_to_slice(data,string):
+    """Slice data according to given pattern"""
+    splits = [ int(i) for i in string.split(':') if i ]
+    # Argument is single number Ex --choice 1
+    if string.isnumeric():
+        return data[int(string)]
+    # Argument is a range without skipping Ex --choice 1:20
+    elif len(splits) == 2:
+        return data[splits[0]:splits[1]]
+    # Argument is a range with skipping Ex. --choice 1:20:2
+    elif len(splits) == 3:
+        return data[splits[0]:splits[1]:splits[2]]
+
+
+### ENDPOINTS --> Functions that process incoming stream of data ###
+# Called when --choice argument is given
+# Works like head/tail command on POSIX systems.
 def choice_endpoint(data,default):
+    """Processes choice argument"""
     global NEWLINE
     choices = data.split(NEWLINE)
-    if default is None:
-        print('Choices available')
-        average_length = int(statistics.mean([ len(a) for a in choices ]))
-        print('-'*average_length)
-        for index , choice in enumerate(choices,1):
-            print(' {index}. {choice} '.format(index=index,choice=choice))
-        print('-'*average_length)
-        index = int(input('Select index >>'))
+    output = string_to_slice(choices,default)
+    # If output is list , join else return as it is.
+    if isinstance(output , list):
+        return NEWLINE.join(output)
     else:
-        index = default
-    return choices[index]
+        return output
     
 
+# Called when --divert argument is given , diverts output to given file
+# Works like tee command on POSIX systems.
 def divert_endpoint(data,filename):
     with open(filename,'w') as outputfile:
         outputfile.write(data)
     return data
 
+# Called when --count argument is given , counts stream according to given method
+# Works like wc command on POSIX systems.
 def count_endpoint(data,strategy):
     global NEWLINE
     global SEPERATOR
@@ -143,6 +249,8 @@ def count_endpoint(data,strategy):
     elif strategy == 'line':
         return str(len(data.split(NEWLINE)))
 
+# CAlled when --unique argument is given , removes repeated entries in stream according to given method
+# Works like uniq command on POSIX systems.
 def unique_endpoint(data,strategy):
     global SEPERATOR
     global NEWLINE
@@ -151,60 +259,210 @@ def unique_endpoint(data,strategy):
     elif strategy == 'line':
         return NEWLINE.join(set(data.split(NEWLINE)))
 
+# Called when --linum argument is given , adds numeric prefix to each line , arabic or roman.
 def linum_endpoint(data,strategy):
-    return data
+    global NEWLINE
+    lines = data.split(NEWLINE)
+    output = list()
+    if strategy == 'arabic':
+        for i in range(len(lines)):
+            output.append(str(i+1) + ') ' + str(lines[i-1]))
+    if strategy == 'roman':
+        for i in range(len(lines)):
+            output.append(str(int_to_roman(i+1)) + ') ' + str(lines[i-1]))
+    return NEWLINE.join(output)
     
+# Called when --sort argument is given , sorts stream according to given paramaters
+# Works just like sort command on POSIX compliant systems.
 def sort_endpoint(data,strategy):
-    return data
+    global NEWLINE
+    if strategy == 'alpha':
+        output =  sorted(data.split(NEWLINES))
+    if strategy == 'ralpha':
+        output = sorted(data.split(NEWLINES),reverse=True)
+    if strategy == 'len':
+        output = sorted(data.split(NEWLINE),key=lambda x : len(x))
+    if strategy == 'delen':
+        output = sorted(data.split(NEWLINE),key=lambda x : len(x),reverse=True)
 
+    return NEWLINE.join(output)
+
+# Called when --output is used , directs output to given file without forwading stream.
+# Works like redirection in Bash ,Zsh shells  on POSIX systems.Ex stream >> file , 
 def output_endpoint(data,filename):
     with open(filename,'w') as outputfile:
         outputfile.write(str(data))
     return None
 
+# Called when --store is used , stores current value of stream to a given variable name
 def store_endpoint(data,varname):
     global INTERNAL_DATA
     INTERNAL_DATA[varname] = data
     return data
+# Called when --var is used , substitutes current stream with value of given variable
 def var_endpoint(data,varname):
     global INTERNAL_DATA
     return INTERNAL_DATA.get(varname,'')
+
+# Called when --search is used , narrows current stream by searching for given term.
+# Works like grep tool on POSIX compliant systems
+def search_endpoint(data,search_term):
+    global NEWLINE
+    lines = data.split(NEWLINE)
+    output = list()
+    for line in lines:
+        if search_term in line:
+            output.append(line)
+    return NEWLINE.join(output)
+
+    
+# Called when --tabular is used , enters tabular mode interprets further arguments accordingly
+# Works like awk command on POSIX systems , altough this is not as complex as awk.
+# Can be thought of quite dumbed-down version of awk
 def tabular_endpoint(data,options):
     global NEWLINE
+    global SEPERATOR
+    # Initializes the table
     table = data.split(NEWLINE)
+    output = list()
+    # Only keeps the options till next --tabular argument , as it can overlap .
+    # This prevents situations like this --tabular --column 1 --tabular ---mean.
+    # Above --mean cannot be seen by the first --tabular argument parser.
+    if '--tabular' in options:
+        options = options[:options.index('--tabular')]
+    # Loop through each argument , sorting only valid arguments
     for i,option in enumerate(options):
         if option[:2] == '--':
             option = option[2:]
+            # If output is not nill(Already recursive output present)
+            # Copy existing data to table(Which is input to functions for further interpolation)
+            if output:
+                table = output.copy()
+                output = list()
             if option == 'column':
-                pass
+                column_no = int(options[i+1])
+                for line in table:
+                    output.append([ i for i in line.split(SEPERATOR) if i][column_no])
+            elif option == 'strip':
+                no = int(options[i+1])
+                for line in table:
+                    if no < 0:
+                        output.append(line[:no])
+                    else:
+                        output.append(line[no:])
+            elif option == 'add':
+                return str(sum(float(i) for i in table))
+            elif option == 'max':
+                return str(max(float(i) for i in table))
+            elif option == 'min':
+                return str(min(float(i) for i in table))
+            elif option == 'mean':
+                return str(statistics.mean(float(i) for i in table))
+            elif option == 'std':
+                return str(statistics.stdev(float(i) for i in table))
+            elif option == 'variance':
+                return str(statistics.variance(float(i) for i in table))
+            elif option == 'median':
+                return str(statistics.median(float(i) for i in table))
+            elif option == 'multiply':
+                # If argument is numerical , directly multiply else get value from stored variable
+                for line in table:
+                    multiplier = 1
+                    if options[i+1].isnumeric():
+                        multiplier = options[i+1]
+                    else:
+                        multiplier = INTERNAL_DATA[options[i+1]]
+
+                    output.append(float(line) * float(multiplier))
+            elif option == 'divide':
+                # If argument is numerical , directly divide else get value from stored variable
+                for line in table:
+                    divisor = 1
+                    if options[i+1].isnumeric():
+                        divisor = options[i+1]
+                    else:
+                        divisor = INTERNAL_DATA[options[i+1]]
+
+                    output.append(float(line) / float(divisor))
+        
+            
+    # As input as output is exchanged(At start of loop on line no 340)
+    # Return appropriate data stream.
+    if output:
+        return NEWLINE.join(str(i) for i in output)
+    if table:
+        return NEWLINE.join(str(i) for i in table)
+
+# Called when --concat argument is given.
+# Concats data from given variable to current stream
+# Works like cat command on POSIX systems.
+def concat_endpoint(data,varname):
+    if varname in INTERNAL_DATA:
+        data += NEWLINE + INTERNAL_DATA[varname]
+    return data
+# Called when --lower argument is given.
+# Simply converts all stream into lowercase
+def lower_endpoint(data):
+    return str(data).lower()
+# Called when --upper argument is given.
+# Simply converts all stream into uppercase
+def upper_endpoint(data):
+    return str(data).upper()
+# Main method
 def main():
     global INTERNAL_DATA
+    # parses arguments
     arguments = parse_arguments()
+    # get's output from either STDIN or given file
     output = get_input(arguments.file)
+    # Set's default input variable
     INTERNAL_DATA['input'] = output
+    # Loops over every argument and recursively calls appropriate function , passing last function's output .
     for argument_index , argument in enumerate(sys.argv[1:]):
 
         if argument[:2] == '--':
             argument = argument[2:]
             if argument == 'choice':
-                output = choice_endpoint(output,arguments.choice)
+                output = choice_endpoint(output,sys.argv[argument_index+2])
             if argument == 'tabular':
                 output = tabular_endpoint(output,sys.argv[argument_index+2:])
             if argument == 'divert':
                 output = divert_endpoint(output,sys.argv[argument_index+2])
             if argument == 'count':
-                output = count_endpoint(output,arguments.count)
+                output = count_endpoint(output,sys.argv[argument_index+2])
             if argument == 'unique':
-                output = unique_endpoint(output,arguments.unique)
+                output = unique_endpoint(output,sys.argv[argument_index+2])
             if argument == 'output':
-                output = output_endpoint(output,arguments.output)
+                output = output_endpoint(output,sys.argv[argument_index+2])
             if argument == 'store':
-                output = store_endpoint(output,arguments.store)
+                output = store_endpoint(output,sys.argv[argument_index+2])
             if argument == 'var':
-                output = var_endpoint(output,arguments.var)
+                output = var_endpoint(output,sys.argv[argument_index+2])
+            if argument == 'lower':
+                output = lower_endpoint(output)
+            if argument == 'upper':
+                output = upper_endpoint(output)
+            if argument == 'search':
+                output = search_endpoint(output,sys.argv[argument_index+2])
+            if argument == 'linum':
+                output = linum_endpoint(output,sys.argv[argument_index+2])
+            if argument == 'sort':
+                output = sort_endpoint(output,sys.argv[argument_index+2])
+            if argument == 'concat':
+                output = concat_endpoint(output,sys.argv[argument_index+2])
+    # If there is anything to print
     if output:
+        # if user needs to colorize outptu , attempts using pygments
+        if arguments.color:
+            output = highlight(output,guess_lexer(output),TerminalFormatter())
         print(output)
         
 
-main()
-        
+# Basic Error Handling
+# Exits on error with whatever error message was present
+try:
+    main()
+except Exception as e:
+    print('There was some error , check given arguments and data stream')
+    print(e)
+    sys.exit(1)
