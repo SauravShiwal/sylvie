@@ -100,7 +100,7 @@
   This example adds color , line number and displays first ten lines of ~Sylvie's~ own source code
 
   #+begin_src sh
-  sylvie.py --file sylvie.py --color --color --linum arabic --choice 0:10
+  sylvie.py --file sylvie.py --color --linum arabic --choice 0:10
   #+end_src
 
    
