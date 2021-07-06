@@ -266,10 +266,10 @@ def linum_endpoint(data,strategy):
     output = list()
     if strategy == 'arabic':
         for i in range(len(lines)):
-            output.append(str(i+1) + ') ' + str(lines[i-1]))
+            output.append(str(i+1) + ' |' + str(lines[i-1]))
     if strategy == 'roman':
         for i in range(len(lines)):
-            output.append(str(int_to_roman(i+1)) + ') ' + str(lines[i-1]))
+            output.append(str(int_to_roman(i+1)) + ' |' + str(lines[i-1]))
     return NEWLINE.join(output)
     
 # Called when --sort argument is given , sorts stream according to given paramaters
