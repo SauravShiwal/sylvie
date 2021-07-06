@@ -1,14 +1,15 @@
 * Sylvie
-  Sylvie is a tool that allows for data entanglement , it applies transformation to a stream of data . It is a simpler and easier form of standard GNU coreutils tools like sed , awk etc.
+  Sylvie is a enchantress of data.It is a replacement of GNU Coreutils for simpler tasks .It is also a single file , portable and syntactically similar to Python.
 
-  IT IS A PROJECT DEVELOPED FOR HACK THE TERMINAL HACKATHON.Thanks to them for giving such oppurtunity.
-
+  [[./sylvie.png]]
 ** Systems
    Sylvie has been devloped and tested on Arch Linux , other GNU/Linux systems are supported with Python 3.9 installed .
    
 ** Installation
-   Sylvie is just a script (right now!) and there is no other choice than moving script to a location within your $PATH variable.
-   Make the script executable by using ~chmod~.
+   It is uploaded to PyPI , thus can be installed using Pip.
+   #+begin_src sh
+   pip install sylvie
+   #+end_src
 
 ** Dependencies
    It only depends on ~pygments~ for colorizing input .
