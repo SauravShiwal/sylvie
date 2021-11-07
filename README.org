@@ -2,6 +2,7 @@
   Sylvie is a enchantress of data.It is a replacement of GNU Coreutils for simpler tasks .It is also a single file , portable and syntactically similar to Python.
 
   [[./sylvie.png]]
+
 ** Systems
    Sylvie has been devloped and tested on Arch Linux , other GNU/Linux systems are supported with Python 3.9 installed .
    
@@ -12,11 +13,7 @@
    #+end_src
 
 ** Dependencies
-   It only depends on ~pygments~ for colorizing input .
-
-   #+begin_shell sh
-   pip install --user pygments
-   #+end_shell
+   It is built in Pure Python , and requires no extra dependencies.
 
 ** Usage
    Sylvie is a command line tool , thus must be controlled with command line arguments.
@@ -44,7 +41,6 @@
     | --linum   | Adds line numbers to data straem with given method                         |
     | --output  | Outputs current data stream to given filename , ending current data stream |
     | --unique  | Only forwards unique lines/word in data stream                             |
-    | --color   | Try to colorize output using pygments                                      |
     | --tabular | Enter tabular mode                                                         |
 
     Variables can be stored using ~--store~ argument and retreived using ~--var~ argument.
@@ -97,11 +93,10 @@
    sylvie.py --file /proc/meminfo --search MemTotal --tabular --column 1 --store total --var input --search MemFree --tabular --column 1 --divide total
    #+end_src
 
-  Sylvie can colorize source code and add line numbers.
-  This example adds color , line number and displays first ten lines of ~Sylvie's~ own source code
+  This example adds  line number and displays first ten lines of ~Sylvie's~ own source code
 
   #+begin_src sh
-  sylvie.py --file sylvie.py --color --linum arabic --choice 0:10
+  sylvie.py --file sylvie.py --linum arabic --choice 0:10
   #+end_src
 
    

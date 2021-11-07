@@ -14,10 +14,6 @@ import sys
 import codecs
 import fileinput
 
-# Pygments for coloring data
-from pygments import highlight
-from pygments.lexers import guess_lexer
-from pygments.formatters import TerminalFormatter
 
 # Internal Variables
 SEPERATOR = ' '
@@ -48,11 +44,6 @@ def parse_arguments():
                         action='store',
                         required=False,
                         help='Which file to read from instead of stdin',
-                        )
-    parser.add_argument('--color',
-                        action='store_true',
-                        required=False,
-                        help='Whether to colorize output based on detected source code',
                         )
     parser.add_argument('--choice',
                         action='store',
@@ -453,8 +444,6 @@ def main():
     # If there is anything to print
     if output:
         # if user needs to colorize outptu , attempts using pygments
-        if arguments.color:
-            output = highlight(output,guess_lexer(output),TerminalFormatter())
         print(output)
         
 
